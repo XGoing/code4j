@@ -10,6 +10,14 @@ import java.sql.*;
  * 代码生成工具类.
  */
 public class CodeGenerator {
+    private static final String SQL = "SELECT * FROM ";
+    static {
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
     /**
      * 连接数据库生成指定表对应实体类.
      *
@@ -31,11 +39,10 @@ public class CodeGenerator {
         BufferedWriter writer = null;
         Connection conn = null;
         try {
-            Class.forName("com.mysql.jdbc.Driver");
             String url = "jdbc:mysql://" + host + ":" + port + "/" + dbName + "?user=" + username + "&password=" + password;
             conn = DriverManager.getConnection(url);
             DatabaseMetaData dbMeta = conn.getMetaData();
-            ResultSet tableRet = dbMeta.getTables(null, "%", tableName, new String[]{"TABLE"});
+            ResultSet tableRet = dbMeta.getTables(dbName, "%" + dbName + "%", tableName, new String[]{"TABLE"});
             boolean findTable = false;
             while (tableRet.next()) {
                 findTable = true;
@@ -49,7 +56,7 @@ public class CodeGenerator {
                 classBuilder.append(";");
                 classBuilder.append("\n");
                 classBuilder.append("\n");
-                ResultSet colRet1 = dbMeta.getColumns(null, "%", tableName, "%");
+                ResultSet colRet1 = dbMeta.getColumns(dbName, "%" + dbName + "%", tableName, "%");
                 classBuilder.append(getContent(colRet1, 0));
                 classBuilder.append("\n");
                 classBuilder.append("@Getter\n");
@@ -58,7 +65,7 @@ public class CodeGenerator {
                 classBuilder.append(className);
                 classBuilder.append(" { ");
                 classBuilder.append("\n");
-                ResultSet colRet2 = dbMeta.getColumns(null, "%", tableName, "%");
+                ResultSet colRet2 = dbMeta.getColumns(dbName, "%" + dbName + "%", tableName, "%");
                 classBuilder.append(getContent(colRet2, 1));
                 classBuilder.append("\n");
                 classBuilder.append("} ");
@@ -70,17 +77,17 @@ public class CodeGenerator {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
             if (writer != null) {
                 try {
                     writer.close();
                 } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
                     e.printStackTrace();
                 }
             }
@@ -198,49 +205,32 @@ public class CodeGenerator {
     private static String getTypeName(String columnType) {
         String result = null;
         columnType = columnType.toLowerCase();
-        switch (columnType) {
-            case "datetime":
-                result = "Date";
-                break;
-            case "timestamp":
-                result = "Date";
-                break;
-            case "date":
-                result = "Date";
-                break;
-            case "time":
-                result = "Date";
-                break;
-            case "tinyint":
-                result = "int";
-                break;
-            case "smallint":
-                result = "int";
-                break;
-            case "int":
-                result = "int";
-                break;
-            case "int unsigned":
-                result = "int";
-                break;
-            case "bigint":
-                result = "long";
-                break;
-            case "char":
-                result = "String";
-                break;
-            case "varchar":
-                result = "String";
-                break;
-            case "text":
-                result = "String";
-                break;
-            case "decimal":
-                result = "BigDecimal";
-                break;
-            default:
-                ;
-                break;
+        if (columnType.contains("datetime") || columnType.contains("timestamp") || columnType.contains("date") || columnType.contains("time")) {
+            result = "Date";
+        }
+
+        if (columnType.contains("tinyint") || columnType.contains("smallint") || columnType.contains("int")) {
+            result = "int";
+        }
+
+        if (columnType.contains("bigint")) {
+            result = "long";
+        }
+
+        if (columnType.contains("char") || columnType.contains("varchar") || columnType.contains("text")) {
+            result = "String";
+        }
+
+        if (columnType.contains("decimal")) {
+            result = "BigDecimal";
+        }
+
+        if (columnType.contains("float")) {
+            result = "float";
+        }
+
+        if (columnType.contains("double")) {
+            result = "float";
         }
         return result;
     }
