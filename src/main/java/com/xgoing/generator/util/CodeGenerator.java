@@ -11,6 +11,7 @@ import java.sql.*;
  */
 public class CodeGenerator {
     private static final String SQL = "SELECT * FROM ";
+
     static {
         try {
             Class.forName("com.mysql.jdbc.Driver");
@@ -18,6 +19,7 @@ public class CodeGenerator {
             e.printStackTrace();
         }
     }
+
     /**
      * 连接数据库生成指定表对应实体类.
      *
@@ -144,9 +146,11 @@ public class CodeGenerator {
                 if (type == 0) {
                     String libName = getLibName(columnType);
                     if (libName != null) {
-                        contentBuilder.append("import ");
-                        contentBuilder.append(libName);
-                        contentBuilder.append(";\n");
+                        if (columnComment.indexOf(libName) == -1) {
+                            contentBuilder.append("import ");
+                            contentBuilder.append(libName);
+                            contentBuilder.append(";\n");
+                        }
                     }
                 }
 
